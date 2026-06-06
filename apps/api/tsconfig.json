@@ -4,7 +4,6 @@
     "moduleResolution": "node10",
     "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
-    "isolatedModules": true,
     "noEmit": false,
     "declaration": true,
     "removeComments": true,
