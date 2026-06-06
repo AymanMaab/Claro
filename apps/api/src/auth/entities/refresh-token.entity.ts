@@ -9,8 +9,15 @@ export class RefreshToken {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
+  // bcrypt hash of the raw token — plaintext never persisted
   @Column({ unique: true })
-  token: string;
+  tokenHash: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  userAgent: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  ipAddress: string | null;
 
   @Column()
   expiresAt: Date;
