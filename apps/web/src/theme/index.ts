@@ -1,5 +1,14 @@
 import { createTheme, type Theme } from '@mui/material/styles';
 
+declare module '@mui/material/styles' {
+  interface Theme {
+    custom: { authGradient: string };
+  }
+  interface ThemeOptions {
+    custom?: { authGradient?: string };
+  }
+}
+
 const CLARO = {
   navy:       '#001d64',
   darkBlue:   '#002473',
@@ -34,6 +43,9 @@ const shared = {
 
 export const lightTheme: Theme = createTheme({
   ...shared,
+  custom: {
+    authGradient: `linear-gradient(160deg, #ddeeff 0%, #eaf4ff 50%, #f0f8ff 100%)`,
+  },
   palette: {
     mode: 'light',
     primary:    { main: CLARO.navy, light: CLARO.accentBlue, dark: CLARO.navy, contrastText: '#fff' },
@@ -45,6 +57,9 @@ export const lightTheme: Theme = createTheme({
 
 export const darkTheme: Theme = createTheme({
   ...shared,
+  custom: {
+    authGradient: `linear-gradient(135deg, #000a2e 0%, ${CLARO.navy} 60%, ${CLARO.midNavy} 100%)`,
+  },
   palette: {
     mode: 'dark',
     primary:    { main: CLARO.accentBlue, light: CLARO.skyBlue, dark: CLARO.midNavy, contrastText: '#fff' },

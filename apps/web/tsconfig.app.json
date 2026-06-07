@@ -19,7 +19,13 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Workspace packages */
+    "paths": {
+      "@claro/shared": ["../../packages/shared/src/index.ts"],
+      "@claro/shared/*": ["../../packages/shared/src/*"]
+    }
   },
   "include": ["src"]
 }
