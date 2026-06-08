@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('refresh_tokens')
@@ -7,21 +7,22 @@ export class RefreshToken {
   id: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   // bcrypt hash of the raw token — plaintext never persisted
-  @Column({ unique: true })
+  @Column({ name: 'token_hash', unique: true })
   tokenHash: string;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ name: 'user_agent', type: 'varchar', nullable: true })
   userAgent: string | null;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ name: 'ip_address', type: 'varchar', nullable: true })
   ipAddress: string | null;
 
-  @Column()
+  @Column({ name: 'expires_at' })
   expiresAt: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

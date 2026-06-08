@@ -11,7 +11,7 @@ interface AuthResponse {
 }
 
 const rawBaseQuery = fetchBaseQuery({
-  baseUrl: '/api',
+  baseUrl: '/api/v1',
   prepareHeaders: (headers) => {
     const token = tokenService.get();
     if (token) headers.set('Authorization', `Bearer ${token}`);
