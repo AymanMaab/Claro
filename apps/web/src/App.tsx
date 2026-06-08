@@ -1,42 +1,34 @@
-import { useState, useEffect } from 'react';
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
+import { lazy, Suspense } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { CircularProgress, Box } from '@mui/material';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
-type Route = 'login' | 'register';
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
 
-const getRoute = (): Route => {
-  const path = window.location.pathname;
-  if (path === '/register') return 'register';
-  return 'login';
-};
+const PageLoader = () => (
+  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+    <CircularProgress />
+  </Box>
+);
 
-const App = () => {
-  const [route, setRoute] = useState<Route>(getRoute);
-
-  useEffect(() => {
-    const onPop = () => setRoute(getRoute());
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, []);
-
-  // Intercept <a href> clicks for in-app navigation
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      const anchor = (e.target as HTMLElement).closest('a');
-      if (!anchor) return;
-      const href = anchor.getAttribute('href');
-      if (href === '/login' || href === '/register') {
-        e.preventDefault();
-        window.history.pushState(null, '', href);
-        setRoute(href.slice(1) as Route);
-      }
-    };
-    document.addEventListener('click', onClick);
-    return () => document.removeEventListener('click', onClick);
-  }, []);
-
-  if (route === 'register') return <RegisterPage />;
-  return <LoginPage />;
-};
+const App = () => (
+  <Suspense fallback={<PageLoader />}>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  </Suspense>
+);
 
 export default App;

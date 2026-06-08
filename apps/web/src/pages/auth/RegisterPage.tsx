@@ -11,84 +11,51 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Link from '@mui/material/Link';
 import Grid from '@mui/material/Grid';
 import InputAdornment from '@mui/material/InputAdornment';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import { Mail, Lock, User } from 'lucide-react';
+import { useFormik } from 'formik';
+import { useNavigate } from 'react-router-dom';
 import { Toast } from '../../components';
-import { authService } from '../../services';
-
-interface FieldErrors {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-}
-
-const EMAIL_RE = /\S+@\S+\.\S+/;
-const HAS_UPPER = /[A-Z]/;
-const HAS_DIGIT = /\d/;
+import { useRegisterMutation } from '../../store/api/authApi';
+import { registerSchema } from '../../schemas/auth.schema';
 
 const RegisterPage = () => {
   const theme = useTheme();
-
-  const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [errors, setErrors] = useState<FieldErrors>({});
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [register, { isLoading }] = useRegisterMutation();
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
     severity: 'success',
   });
 
-  const set = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [field]: e.target.value }));
-
-  const validate = (): boolean => {
-    const rules: [keyof FieldErrors, boolean, string][] = [
-      ['firstName', !form.firstName.trim(),              'First name is required.'],
-      ['firstName', form.firstName.trim().length < 2,    'Must be at least 2 characters.'],
-      ['lastName',  !form.lastName.trim(),               'Last name is required.'],
-      ['lastName',  form.lastName.trim().length < 2,     'Must be at least 2 characters.'],
-      ['email',     !form.email.trim(),                  'Email is required.'],
-      ['email',     !EMAIL_RE.test(form.email),          'Enter a valid email address.'],
-      ['password',  !form.password,                      'Password is required.'],
-      ['password',  form.password.length < 8,            'Must be at least 8 characters.'],
-      ['password',  !HAS_UPPER.test(form.password),      'Must contain at least one uppercase letter.'],
-      ['password',  !HAS_DIGIT.test(form.password),      'Must contain at least one number.'],
-      ['confirmPassword', !form.confirmPassword,         'Please confirm your password.'],
-      ['confirmPassword', form.confirmPassword !== form.password, 'Passwords do not match.'],
-    ];
-
-    const next: FieldErrors = {};
-    for (const [field, failing, message] of rules) {
-      if (failing && !next[field]) next[field] = message;
-    }
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-
-    setLoading(true);
-    try {
-      await authService.register(form.firstName, form.lastName, form.email, form.password);
-      setToast({ open: true, message: 'Account created! Please sign in.', severity: 'success' });
-      // TODO: navigate to login after short delay
-    } catch (err) {
-      setToast({ open: true, message: (err as Error).message, severity: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const formik = useFormik({
+    initialValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+    validationSchema: registerSchema,
+    onSubmit: async (values) => {
+      try {
+        await register({
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          password: values.password,
+        }).unwrap();
+        setToast({ open: true, message: 'Account created! Please sign in.', severity: 'success' });
+        setTimeout(() => navigate('/login'), 1500);
+      } catch (err) {
+        const message = (err as { data?: { message?: string | string[] }; message?: string })?.data?.message
+          ?? (err as { message?: string })?.message
+          ?? 'Registration failed. Please try again.';
+        setToast({ open: true, message: Array.isArray(message) ? message[0] : String(message), severity: 'error' });
+      }
+    },
+  });
 
   return (
     <Box
@@ -128,103 +95,158 @@ const RegisterPage = () => {
           Start tracking your finances with Claro
         </Typography>
 
-        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box component="form" onSubmit={formik.handleSubmit} noValidate sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Grid container spacing={1.5}>
             <Grid size={6}>
-              <FormControl fullWidth error={!!errors.firstName}>
+              <FormControl fullWidth error={formik.touched.firstName && !!formik.errors.firstName}>
                 <FormLabel htmlFor="firstName">First name</FormLabel>
                 <OutlinedInput
                   id="firstName"
-                  value={form.firstName}
-                  onChange={set('firstName')}
+                  value={formik.values.firstName}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   placeholder="Ali"
                   size="small"
                   autoComplete="given-name"
                   startAdornment={
                     <InputAdornment position="start"><User size={16} /></InputAdornment>
                   }
+                  inputProps={{
+                    sx: (theme: Theme) => ({
+                      '&:-webkit-autofill': {
+                        WebkitBoxShadow: `0 0 0 100px ${theme.palette.background.paper} inset`,
+                        WebkitTextFillColor: theme.palette.text.primary,
+                      },
+                    }),
+                  }}
                 />
-                {errors.firstName && <FormHelperText>{errors.firstName}</FormHelperText>}
+                {formik.touched.firstName && formik.errors.firstName && (
+                  <FormHelperText>{formik.errors.firstName}</FormHelperText>
+                )}
               </FormControl>
             </Grid>
             <Grid size={6}>
-              <FormControl fullWidth error={!!errors.lastName}>
+              <FormControl fullWidth error={formik.touched.lastName && !!formik.errors.lastName}>
                 <FormLabel htmlFor="lastName">Last name</FormLabel>
                 <OutlinedInput
                   id="lastName"
-                  value={form.lastName}
-                  onChange={set('lastName')}
+                  value={formik.values.lastName}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   placeholder="Khan"
                   size="small"
                   autoComplete="family-name"
                   startAdornment={
                     <InputAdornment position="start"><User size={16} /></InputAdornment>
                   }
+                  inputProps={{
+                    sx: (theme: Theme) => ({
+                      '&:-webkit-autofill': {
+                        WebkitBoxShadow: `0 0 0 100px ${theme.palette.background.paper} inset`,
+                        WebkitTextFillColor: theme.palette.text.primary,
+                      },
+                    }),
+                  }}
                 />
-                {errors.lastName && <FormHelperText>{errors.lastName}</FormHelperText>}
+                {formik.touched.lastName && formik.errors.lastName && (
+                  <FormHelperText>{formik.errors.lastName}</FormHelperText>
+                )}
               </FormControl>
             </Grid>
           </Grid>
 
-          <FormControl error={!!errors.email}>
+          <FormControl error={formik.touched.email && !!formik.errors.email}>
             <FormLabel htmlFor="email">Email</FormLabel>
             <OutlinedInput
               id="email"
               type="email"
-              value={form.email}
-              onChange={set('email')}
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="you@example.com"
               size="small"
               autoComplete="email"
               startAdornment={
                 <InputAdornment position="start"><Mail size={16} /></InputAdornment>
               }
+              inputProps={{
+                sx: (theme: Theme) => ({
+                  '&:-webkit-autofill': {
+                    WebkitBoxShadow: `0 0 0 100px ${theme.palette.background.paper} inset`,
+                    WebkitTextFillColor: theme.palette.text.primary,
+                  },
+                }),
+              }}
             />
-            {errors.email && <FormHelperText>{errors.email}</FormHelperText>}
+            {formik.touched.email && formik.errors.email && (
+              <FormHelperText>{formik.errors.email}</FormHelperText>
+            )}
           </FormControl>
 
-          <FormControl error={!!errors.password}>
+          <FormControl error={formik.touched.password && !!formik.errors.password}>
             <FormLabel htmlFor="password">Password</FormLabel>
             <OutlinedInput
               id="password"
               type="password"
-              value={form.password}
-              onChange={set('password')}
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="••••••••"
               size="small"
               autoComplete="new-password"
               startAdornment={
                 <InputAdornment position="start"><Lock size={16} /></InputAdornment>
               }
+              inputProps={{
+                sx: (theme: Theme) => ({
+                  '&:-webkit-autofill': {
+                    WebkitBoxShadow: `0 0 0 100px ${theme.palette.background.paper} inset`,
+                    WebkitTextFillColor: theme.palette.text.primary,
+                  },
+                }),
+              }}
             />
-            {errors.password && <FormHelperText>{errors.password}</FormHelperText>}
+            {formik.touched.password && formik.errors.password && (
+              <FormHelperText>{formik.errors.password}</FormHelperText>
+            )}
           </FormControl>
 
-          <FormControl error={!!errors.confirmPassword}>
+          <FormControl error={formik.touched.confirmPassword && !!formik.errors.confirmPassword}>
             <FormLabel htmlFor="confirmPassword">Confirm password</FormLabel>
             <OutlinedInput
               id="confirmPassword"
               type="password"
-              value={form.confirmPassword}
-              onChange={set('confirmPassword')}
+              value={formik.values.confirmPassword}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="••••••••"
               size="small"
               autoComplete="new-password"
               startAdornment={
                 <InputAdornment position="start"><Lock size={16} /></InputAdornment>
               }
+              inputProps={{
+                sx: (theme: Theme) => ({
+                  '&:-webkit-autofill': {
+                    WebkitBoxShadow: `0 0 0 100px ${theme.palette.background.paper} inset`,
+                    WebkitTextFillColor: theme.palette.text.primary,
+                  },
+                }),
+              }}
             />
-            {errors.confirmPassword && <FormHelperText>{errors.confirmPassword}</FormHelperText>}
+            {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+              <FormHelperText>{formik.errors.confirmPassword}</FormHelperText>
+            )}
           </FormControl>
 
           <Button
             type="submit"
             variant="contained"
             fullWidth
-            disabled={loading}
+            disabled={isLoading}
             sx={{ mt: 1, py: 1.2 }}
           >
-            {loading ? <CircularProgress size={22} color="inherit" /> : 'Create account'}
+            {isLoading ? <CircularProgress size={22} color="inherit" /> : 'Create account'}
           </Button>
 
           <Typography variant="body2" align="center" color="text.secondary">

@@ -10,63 +10,39 @@ import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Link from '@mui/material/Link';
 import InputAdornment from '@mui/material/InputAdornment';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import { Mail, Lock } from 'lucide-react';
+import { useFormik } from 'formik';
+import { useNavigate } from 'react-router-dom';
 import { Toast } from '../../components';
-import { authService } from '../../services';
-
-interface FieldErrors {
-  email?: string;
-  password?: string;
-}
-
-const EMAIL_RE = /\S+@\S+\.\S+/;
+import { useLoginMutation } from '../../store/api/authApi';
+import { loginSchema } from '../../schemas/auth.schema';
 
 const LoginPage = () => {
   const theme = useTheme();
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<FieldErrors>({});
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [login, { isLoading }] = useLoginMutation();
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
     severity: 'success',
   });
 
-  const validate = (): boolean => {
-    const next: FieldErrors = {};
-    if (!email.trim()) {
-      next.email = 'Email is required.';
-    } else if (!EMAIL_RE.test(email)) {
-      next.email = 'Enter a valid email address.';
-    }
-    if (!password) {
-      next.password = 'Password is required.';
-    } else if (password.length < 8) {
-      next.password = 'Must be at least 8 characters.';
-    }
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-
-    setLoading(true);
-    try {
-      await authService.login(email, password);
-      setToast({ open: true, message: 'Logged in successfully.', severity: 'success' });
-      // TODO: navigate to dashboard
-    } catch (err) {
-      setToast({ open: true, message: (err as Error).message, severity: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const formik = useFormik({
+    initialValues: { email: '', password: '' },
+    validationSchema: loginSchema,
+    onSubmit: async (values) => {
+      try {
+        await login(values).unwrap();
+        navigate('/dashboard');
+      } catch (err) {
+        const message = (err as { data?: { message?: string }; message?: string })?.data?.message
+          ?? (err as { message?: string })?.message
+          ?? 'Login failed. Please try again.';
+        setToast({ open: true, message: String(message), severity: 'error' });
+      }
+    },
+  });
 
   return (
     <Box
@@ -106,14 +82,15 @@ const LoginPage = () => {
           Enter your details to continue
         </Typography>
 
-        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <FormControl error={!!errors.email}>
+        <Box component="form" onSubmit={formik.handleSubmit} noValidate sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <FormControl error={formik.touched.email && !!formik.errors.email}>
             <FormLabel htmlFor="email">Email</FormLabel>
             <OutlinedInput
               id="email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="you@example.com"
               size="small"
               autoComplete="email"
@@ -122,17 +99,28 @@ const LoginPage = () => {
                   <Mail size={16} />
                 </InputAdornment>
               }
+              inputProps={{
+                sx: (theme: Theme) => ({
+                  '&:-webkit-autofill': {
+                    WebkitBoxShadow: `0 0 0 100px ${theme.palette.background.paper} inset`,
+                    WebkitTextFillColor: theme.palette.text.primary,
+                  },
+                }),
+              }}
             />
-            {errors.email && <FormHelperText>{errors.email}</FormHelperText>}
+            {formik.touched.email && formik.errors.email && (
+              <FormHelperText>{formik.errors.email}</FormHelperText>
+            )}
           </FormControl>
 
-          <FormControl error={!!errors.password}>
+          <FormControl error={formik.touched.password && !!formik.errors.password}>
             <FormLabel htmlFor="password">Password</FormLabel>
             <OutlinedInput
               id="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="••••••••"
               size="small"
               autoComplete="current-password"
@@ -141,8 +129,18 @@ const LoginPage = () => {
                   <Lock size={16} />
                 </InputAdornment>
               }
+              inputProps={{
+                sx: (theme: Theme) => ({
+                  '&:-webkit-autofill': {
+                    WebkitBoxShadow: `0 0 0 100px ${theme.palette.background.paper} inset`,
+                    WebkitTextFillColor: theme.palette.text.primary,
+                  },
+                }),
+              }}
             />
-            {errors.password && <FormHelperText>{errors.password}</FormHelperText>}
+            {formik.touched.password && formik.errors.password && (
+              <FormHelperText>{formik.errors.password}</FormHelperText>
+            )}
           </FormControl>
 
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -155,10 +153,10 @@ const LoginPage = () => {
             type="submit"
             variant="contained"
             fullWidth
-            disabled={loading}
+            disabled={isLoading}
             sx={{ mt: 1, py: 1.2 }}
           >
-            {loading ? <CircularProgress size={22} color="inherit" /> : 'Sign in'}
+            {isLoading ? <CircularProgress size={22} color="inherit" /> : 'Sign in'}
           </Button>
 
           <Typography variant="body2" align="center" color="text.secondary">
