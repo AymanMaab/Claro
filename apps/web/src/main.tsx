@@ -1,10 +1,24 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { Provider } from 'react-redux';
+import { BrowserRouter } from 'react-router-dom';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { store } from './store';
+import { lightTheme } from './theme';
+import App from './App.tsx';
+import AuthInitializer from './components/auth/AuthInitializer';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <Provider store={store}>
+      <BrowserRouter>
+        <ThemeProvider theme={lightTheme}>
+          <CssBaseline />
+          <AuthInitializer>
+            <App />
+          </AuthInitializer>
+        </ThemeProvider>
+      </BrowserRouter>
+    </Provider>
   </StrictMode>,
-)
+);
