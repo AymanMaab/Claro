@@ -6,6 +6,7 @@ import { ThemeProvider, CssBaseline } from '@mui/material';
 import { store } from './store';
 import { lightTheme } from './theme';
 import App from './App.tsx';
+import AuthInitializer from './components/auth/AuthInitializer';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <ThemeProvider theme={lightTheme}>
           <CssBaseline />
-          <App />
+          <AuthInitializer>
+            <App />
+          </AuthInitializer>
         </ThemeProvider>
       </BrowserRouter>
     </Provider>

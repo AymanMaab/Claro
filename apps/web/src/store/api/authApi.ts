@@ -43,7 +43,21 @@ export const authApi = baseApi.injectEndpoints({
         dispatch(clearCredentials());
       },
     }),
+
+    refreshSession: builder.mutation<AuthResponse, void>({
+      query: () => ({ url: '/auth/refresh', method: 'POST' }),
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        const { data } = await queryFulfilled;
+        tokenService.set(data.accessToken);
+        dispatch(setCredentials({ user: data.user, accessToken: data.accessToken }));
+      },
+    }),
   }),
 });
 
-export const { useLoginMutation, useRegisterMutation, useLogoutMutation } = authApi;
+export const {
+  useLoginMutation,
+  useRegisterMutation,
+  useLogoutMutation,
+  useRefreshSessionMutation,
+} = authApi;

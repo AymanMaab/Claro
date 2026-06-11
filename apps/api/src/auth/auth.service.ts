@@ -1,12 +1,14 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { readFileSync } from 'fs';
@@ -18,6 +20,7 @@ import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly privateKey: Buffer;
 
   constructor(
@@ -93,6 +96,14 @@ export class AuthService {
         break;
       }
     }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async cleanupExpiredTokens() {
+    const result = await this.refreshTokenRepo.delete({
+      expiresAt: LessThan(new Date()),
+    });
+    this.logger.log(`Cleaned up ${result.affected ?? 0} expired refresh tokens`);
   }
 
   private async issueTokens(user: User, meta: { userAgent?: string; ip?: string }) {
