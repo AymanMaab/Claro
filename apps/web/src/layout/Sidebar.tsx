@@ -385,11 +385,15 @@ const Sidebar = ({ isOpen, onToggle, isMobile = false }: SidebarProps) => {
                               </ListItemIcon>
                               <ListItemText
                                 primary={child.label}
-                                primaryTypographyProps={{
-                                  fontSize: 13,
-                                  fontWeight: childActive ? 600 : 400,
-                                  color: childActive ? 'text.primary' : 'text.secondary',
-                                  noWrap: true,
+                                slotProps={{
+                                  primary: {
+                                    noWrap: true,
+                                    sx: {
+                                      fontSize: 13,
+                                      fontWeight: childActive ? 600 : 400,
+                                      color: childActive ? 'text.primary' : 'text.secondary',
+                                    },
+                                  },
                                 }}
                               />
                               {child.badge && child.badge > 0 ? (
