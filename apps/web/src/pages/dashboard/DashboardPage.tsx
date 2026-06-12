@@ -1,7 +1,4 @@
-import { Typography } from '@mui/material';
+import ComingSoon from '../../components/common/ComingSoon';
 
-const DashboardPage = () => (
-  <Typography variant="h5">Dashboard — coming soon</Typography>
-);
-
+const DashboardPage = () => <ComingSoon page="Dashboard" />;
 export default DashboardPage;

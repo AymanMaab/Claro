@@ -8,15 +8,13 @@ import {
   ListItemIcon,
   ListItemText,
   Collapse,
-  IconButton,
   Tooltip,
-  Typography,
 } from '@mui/material';
 import {
   LayoutDashboard,
   CreditCard,
   ArrowLeftRight,
-  PiggyBank,
+  Wallet,
   BarChart2,
   Settings,
   ChevronLeft,
@@ -25,10 +23,9 @@ import {
   ChevronUp,
   type LucideIcon,
 } from 'lucide-react';
-import { useAppSelector } from '../store/hooks';
 
-const SIDEBAR_EXPANDED = 212;
-const SIDEBAR_COLLAPSED = 64;
+const EXPANDED = 212;
+const COLLAPSED = 64;
 
 interface SubMenuItem {
   id: string;
@@ -54,69 +51,29 @@ interface SidebarProps {
   isMobile?: boolean;
 }
 
-const buildMenuItems = (): MenuItem[] => [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    path: '/dashboard',
-    isAccessible: true,
-  },
-  {
-    id: 'accounts',
-    label: 'Accounts',
-    icon: CreditCard,
-    path: '/accounts',
-    isAccessible: true,
+const MENU_ITEMS: MenuItem[] = [
+  { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard, path: '/dashboard',    isAccessible: true },
+  { id: 'accounts',     label: 'Accounts',     icon: CreditCard,      path: '/accounts',     isAccessible: true,
     children: [
       { id: 'accounts-overview', label: 'Overview', tabId: 'dashboard', icon: LayoutDashboard },
-      { id: 'accounts-cards', label: 'Cards', tabId: 'cards', icon: CreditCard },
+      { id: 'accounts-cards',    label: 'Cards',    tabId: 'cards',     icon: CreditCard },
     ],
   },
-  {
-    id: 'transactions',
-    label: 'Transactions',
-    icon: ArrowLeftRight,
-    path: '/transactions',
-    isAccessible: true,
-  },
-  {
-    id: 'savings',
-    label: 'Savings',
-    icon: PiggyBank,
-    path: '/savings',
-    isAccessible: true,
-  },
-  {
-    id: 'analytics',
-    label: 'Analytics',
-    icon: BarChart2,
-    path: '/analytics',
-    isAccessible: true,
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    icon: Settings,
-    path: '/settings',
-    isAccessible: true,
-  },
+  { id: 'transactions', label: 'Transactions', icon: ArrowLeftRight,  path: '/transactions', isAccessible: true },
+  { id: 'budgets',      label: 'Budgets',      icon: Wallet,          path: '/budgets',      isAccessible: true },
+  { id: 'analytics',    label: 'Analytics',    icon: BarChart2,       path: '/analytics',    isAccessible: true },
+  { id: 'settings',     label: 'Settings',     icon: Settings,        path: '/settings',     isAccessible: true },
 ];
 
 const pathMatches = (path: string, pathname: string) =>
   pathname === path || pathname.startsWith(`${path}/`);
 
-const getActiveMenuId = (items: MenuItem[], pathname: string) =>
-  items
+const getActiveId = (pathname: string) =>
+  MENU_ITEMS
     .filter((item) => pathMatches(item.path, pathname))
     .sort((a, b) => b.path.length - a.path.length)[0]?.id ?? null;
 
-const isSubMenuActive = (
-  parentPath: string,
-  tabId: string,
-  pathname: string,
-  search: string,
-): boolean => {
+const isChildActive = (parentPath: string, tabId: string, pathname: string, search: string) => {
   if (pathname !== parentPath) return false;
   const tab = new URLSearchParams(search).get('tab');
   return tabId === 'dashboard' ? !tab || tab === 'dashboard' : tab === tabId;
@@ -127,50 +84,36 @@ const capBadge = (n: number) => (n > 99 ? '99+' : String(n));
 const Sidebar = ({ isOpen, onToggle, isMobile = false }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = useAppSelector((s) => s.auth.user);
 
   const [collapsed, setCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
 
-  const menuItems = buildMenuItems();
-  const activeId = getActiveMenuId(menuItems, location.pathname);
-
+  const activeId = getActiveId(location.pathname);
   const isExpanded = isMobile ? (isOpen ?? false) : !collapsed;
-  const width = isExpanded ? SIDEBAR_EXPANDED : SIDEBAR_COLLAPSED;
+  const width = isExpanded ? EXPANDED : COLLAPSED;
 
   useEffect(() => {
-    const activeItem = menuItems.find((m) => m.id === activeId);
-    if (activeItem?.children) {
+    const active = MENU_ITEMS.find((m) => m.id === activeId);
+    if (active?.children) {
       setExpandedMenus((prev) => new Set([...prev, activeId!]));
     }
   }, [activeId]);
 
-  const toggleMenu = (id: string) => {
+  const toggleMenu = (id: string) =>
     setExpandedMenus((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  };
 
   const handleItemClick = (item: MenuItem) => {
-    if (item.children?.length) {
-      toggleMenu(item.id);
-    } else {
-      navigate(item.path);
-    }
-  };
-
-  const handleSubItemClick = (parentPath: string, tabId: string) => {
-    navigate(`${parentPath}?tab=${tabId}`);
+    if (item.children?.length) toggleMenu(item.id);
+    else navigate(item.path);
   };
 
   const handleCollapseToggle = () => {
-    if (isMobile) {
-      onToggle?.();
-    } else {
-      setCollapsed((c) => !c);
-    }
+    if (isMobile) onToggle?.();
+    else setCollapsed((c) => !c);
   };
 
   return (
@@ -182,271 +125,255 @@ const Sidebar = ({ isOpen, onToggle, isMobile = false }: SidebarProps) => {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: 'background.paper',
-        borderRight: '1px solid',
-        borderColor: 'divider',
+        bgcolor: 'primary.dark',
+        borderRight: 'none',
         transition: 'width 0.25s ease, min-width 0.25s ease',
         overflow: 'hidden',
         position: isMobile ? 'fixed' : 'relative',
         top: 0,
         left: 0,
         zIndex: isMobile ? 1200 : 'auto',
-        transform: isMobile
-          ? isOpen
-            ? 'translateX(0)'
-            : 'translateX(-10%)'
-          : 'none',
-        boxShadow: isMobile && isOpen ? 4 : 0,
+        transform: isMobile ? (isOpen ? 'translateX(0)' : 'translateX(-10%)') : 'none',
+        boxShadow: isMobile && isOpen ? 8 : 2,
       }}
     >
-      {/* Header */}
+      {/* Logo */}
       <Box
         sx={{
           height: 64,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: isExpanded ? 'flex-start' : 'center',
-          px: isExpanded ? 2 : 1,
+          justifyContent: 'center',
+          px: 1.5,
           borderBottom: '1px solid',
-          borderColor: 'divider',
+          borderColor: 'rgba(255,255,255,0.1)',
           flexShrink: 0,
+          overflow: 'hidden',
         }}
       >
-        {isExpanded ? (
-          <Typography
-            variant="h6"
-            sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: -0.5 }}
+        <Box
+          sx={{
+            height: isExpanded ? 44 : 36,
+            width: isExpanded ? 160 : 36,
+            overflow: 'hidden',
+            transition: 'all 0.25s ease',
+            flexShrink: 0,
+          }}
+        >
+          <svg
+            viewBox={isExpanded ? '0 0 300 100' : '0 0 90 100'}
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ height: '100%', width: 'auto' }}
           >
-            Claro
-          </Typography>
-        ) : (
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 1.5,
-              bgcolor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>
-              C
-            </Typography>
-          </Box>
-        )}
+            <defs>
+              <linearGradient id="cGradientSidebar" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#60a5fa" />
+                <stop offset="100%" stopColor="#0098f1" />
+              </linearGradient>
+            </defs>
+            {/* C arc */}
+            <path d="M 55 8 C 28 8, 8 28, 8 50 C 8 72, 28 92, 55 92 C 68 92, 79 87, 87 79" stroke="url(#cGradientSidebar)" strokeWidth="10" fill="none" strokeLinecap="round" />
+            <circle cx="42" cy="50" r="18" fill="none" stroke="#60a5fa" strokeWidth="1.5" opacity="0.3" />
+            {/* l */}
+            <path d="M 95 32 L 95 72" stroke="#ffffff" strokeWidth="5.5" strokeLinecap="round" />
+            {/* a */}
+            <circle cx="118" cy="60" r="11" stroke="#ffffff" strokeWidth="5.5" fill="none" />
+            <path d="M 129 60 L 129 72" stroke="#ffffff" strokeWidth="5.5" strokeLinecap="round" />
+            {/* r */}
+            <path d="M 145 50 L 145 72" stroke="#ffffff" strokeWidth="5.5" strokeLinecap="round" />
+            <path d="M 145 52 C 145 50, 148 48, 152 48 C 156 48, 158 50, 158 52" stroke="#ffffff" strokeWidth="5.5" strokeLinecap="round" fill="none" />
+            {/* o */}
+            <circle cx="176" cy="60" r="11" stroke="#ffffff" strokeWidth="5.5" fill="none" />
+          </svg>
+        </Box>
       </Box>
 
-      {/* Menu */}
-      <List
-        sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', py: 1 }}
-        disablePadding
-      >
-        {menuItems
-          .filter((item) => item.isAccessible)
-          .map((item) => {
-            const Icon = item.icon;
-            const isActive = activeId === item.id;
-            const isMenuExpanded = expandedMenus.has(item.id);
+      {/* Nav items */}
+      <List sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', py: 1 }} disablePadding>
+        {MENU_ITEMS.filter((item) => item.isAccessible).map((item) => {
+          const Icon = item.icon;
+          const isActive = activeId === item.id;
+          const isMenuExpanded = expandedMenus.has(item.id);
 
-            return (
-              <Box key={item.id}>
-                <Tooltip
-                  title={!isExpanded ? item.label : ''}
-                  placement="right"
-                  arrow
-                >
-                  <ListItem disablePadding sx={{ display: 'block' }}>
-                    <ListItemButton
-                      onClick={() => handleItemClick(item)}
+          return (
+            <Box key={item.id}>
+              <Tooltip title={!isExpanded ? item.label : ''} placement="right" arrow>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    onClick={() => handleItemClick(item)}
+                    sx={{
+                      minHeight: 44,
+                      px: isExpanded ? 2 : 0,
+                      justifyContent: 'center',
+                      borderLeft: '4px solid',
+                      borderColor: isActive ? 'primary.light' : 'transparent',
+                      bgcolor: isActive ? 'rgba(0,152,241,0.15)' : 'transparent',
+                      borderRadius: '0 8px 8px 0',
+                      mr: 1,
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.07)' },
+                    }}
+                  >
+                    <ListItemIcon
                       sx={{
-                        minHeight: 44,
-                        px: isExpanded ? 2 : 1.5,
-                        justifyContent: isExpanded ? 'flex-start' : 'center',
-                        borderLeft: isActive ? '5px solid' : '5px solid transparent',
-                        borderColor: isActive ? 'primary.main' : 'transparent',
-                        bgcolor: isActive ? 'action.selected' : 'transparent',
-                        '&:hover': { bgcolor: 'action.hover' },
-                        borderRadius: '0 8px 8px 0',
-                        mr: 1,
-                        transition: 'all 0.15s ease',
+                        minWidth: 0,
+                        mr: isExpanded ? 1.5 : 0,
+                        justifyContent: 'center',
+                        color: isActive ? '#fff' : 'rgba(255,255,255,0.7)',
+                        position: 'relative',
                       }}
                     >
-                      <ListItemIcon
-                        sx={{
-                          minWidth: 0,
-                          mr: isExpanded ? 1.5 : 0,
-                          justifyContent: 'center',
-                          color: isActive ? 'primary.main' : 'text.secondary',
-                          position: 'relative',
-                        }}
-                      >
-                        <Icon size={20} />
-                        {/* Collapsed badge dot */}
-                        {!isExpanded && item.badge && item.badge > 0 ? (
+                      <Icon size={20} />
+                      {!isExpanded && item.badge ? (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: -2,
+                            right: -2,
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            bgcolor: 'error.main',
+                          }}
+                        />
+                      ) : null}
+                    </ListItemIcon>
+
+                    {isExpanded && (
+                      <>
+                        <ListItemText
+                          primary={item.label}
+                          slotProps={{
+                            primary: {
+                              noWrap: true,
+                              sx: {
+                                fontSize: 14,
+                                fontWeight: isActive ? 600 : 400,
+                                color: isActive ? '#fff' : 'rgba(255,255,255,0.7)',
+                              },
+                            },
+                          }}
+                        />
+                        {item.badge ? (
                           <Box
                             sx={{
-                              position: 'absolute',
-                              top: -2,
-                              right: -2,
-                              width: 8,
-                              height: 8,
-                              borderRadius: '50%',
                               bgcolor: 'error.main',
+                              color: 'error.contrastText',
+                              fontSize: 10,
+                              fontWeight: 700,
+                              px: 0.75,
+                              borderRadius: 10,
+                              ml: 0.5,
+                              minWidth: 20,
+                              textAlign: 'center',
                             }}
-                          />
+                          >
+                            {capBadge(item.badge)}
+                          </Box>
                         ) : null}
-                      </ListItemIcon>
+                        {item.children?.length ? (
+                          isMenuExpanded
+                            ? <ChevronUp size={14} color={isActive ? '#fff' : 'rgba(255,255,255,0.7)'} />
+                            : <ChevronDown size={14} color={isActive ? '#fff' : 'rgba(255,255,255,0.7)'} />
+                        ) : null}
+                      </>
+                    )}
+                  </ListItemButton>
+                </ListItem>
+              </Tooltip>
 
-                      {isExpanded && (
-                        <>
-                          <ListItemText
-                            primary={item.label}
-                            slotProps={{
-                              primary: {
-                                noWrap: true,
-                                sx: {
-                                  fontSize: 14,
-                                  fontWeight: isActive ? 600 : 400,
-                                  color: isActive ? 'text.primary' : 'text.secondary',
-                                },
-                              },
+              {item.children?.length && isExpanded ? (
+                <Collapse in={isMenuExpanded} timeout={200} unmountOnExit>
+                  <List disablePadding>
+                    {item.children.map((child) => {
+                      const ChildIcon = child.icon;
+                      const childActive = isChildActive(
+                        item.path, child.tabId, location.pathname, location.search,
+                      );
+                      return (
+                        <ListItem key={child.id} disablePadding>
+                          <ListItemButton
+                            onClick={() => navigate(`${item.path}?tab=${child.tabId}`)}
+                            sx={{
+                              pl: 4.5,
+                              pr: 2,
+                              minHeight: 38,
+                              borderLeft: '4px solid',
+                              borderColor: childActive ? 'primary.light' : 'transparent',
+                              bgcolor: childActive ? 'rgba(0,152,241,0.12)' : 'transparent',
+                              borderRadius: '0 8px 8px 0',
+                              mr: 1,
+                              '&:hover': { bgcolor: 'rgba(255,255,255,0.07)' },
                             }}
-                          />
-                          {item.badge && item.badge > 0 ? (
-                            <Box
+                          >
+                            <ListItemIcon
                               sx={{
-                                bgcolor: 'error.main',
-                                color: '#fff',
-                                fontSize: 10,
-                                fontWeight: 700,
-                                px: 0.75,
-                                py: 0.1,
-                                borderRadius: 10,
-                                ml: 0.5,
-                                minWidth: 20,
-                                textAlign: 'center',
+                                minWidth: 0,
+                                mr: 1.5,
+                                color: childActive ? '#fff' : 'rgba(255,255,255,0.6)',
                               }}
                             >
-                              {capBadge(item.badge)}
-                            </Box>
-                          ) : null}
-                          {item.children?.length ? (
-                            isMenuExpanded ? (
-                              <ChevronUp size={14} color="var(--mui-palette-text-secondary)" />
-                            ) : (
-                              <ChevronDown size={14} color="var(--mui-palette-text-secondary)" />
-                            )
-                          ) : null}
-                        </>
-                      )}
-                    </ListItemButton>
-                  </ListItem>
-                </Tooltip>
-
-                {/* Submenu */}
-                {item.children?.length && isExpanded ? (
-                  <Collapse in={isMenuExpanded} timeout={200} unmountOnExit>
-                    <List disablePadding>
-                      {item.children.map((child) => {
-                        const ChildIcon = child.icon;
-                        const childActive = isSubMenuActive(
-                          item.path,
-                          child.tabId,
-                          location.pathname,
-                          location.search,
-                        );
-
-                        return (
-                          <ListItem key={child.id} disablePadding>
-                            <ListItemButton
-                              onClick={() => handleSubItemClick(item.path, child.tabId)}
-                              sx={{
-                                pl: 4.5,
-                                pr: 2,
-                                minHeight: 38,
-                                borderLeft: childActive ? '5px solid' : '5px solid transparent',
-                                borderColor: childActive ? 'primary.light' : 'transparent',
-                                bgcolor: childActive ? 'action.selected' : 'transparent',
-                                '&:hover': { bgcolor: 'action.hover' },
-                                borderRadius: '0 8px 8px 0',
-                                mr: 1,
+                              <ChildIcon size={16} />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={child.label}
+                              slotProps={{
+                                primary: {
+                                  noWrap: true,
+                                  sx: {
+                                    fontSize: 13,
+                                    fontWeight: childActive ? 600 : 400,
+                                    color: childActive ? '#fff' : 'rgba(255,255,255,0.6)',
+                                  },
+                                },
                               }}
-                            >
-                              <ListItemIcon
+                            />
+                            {child.badge ? (
+                              <Box
                                 sx={{
-                                  minWidth: 0,
-                                  mr: 1.5,
-                                  color: childActive ? 'primary.light' : 'text.secondary',
+                                  bgcolor: 'error.main',
+                                  color: 'error.contrastText',
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  px: 0.75,
+                                  borderRadius: 10,
+                                  ml: 0.5,
+                                  minWidth: 20,
+                                  textAlign: 'center',
                                 }}
                               >
-                                <ChildIcon size={16} />
-                              </ListItemIcon>
-                              <ListItemText
-                                primary={child.label}
-                                slotProps={{
-                                  primary: {
-                                    noWrap: true,
-                                    sx: {
-                                      fontSize: 13,
-                                      fontWeight: childActive ? 600 : 400,
-                                      color: childActive ? 'text.primary' : 'text.secondary',
-                                    },
-                                  },
-                                }}
-                              />
-                              {child.badge && child.badge > 0 ? (
-                                <Box
-                                  sx={{
-                                    bgcolor: 'error.main',
-                                    color: '#fff',
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    px: 0.75,
-                                    py: 0.1,
-                                    borderRadius: 10,
-                                    ml: 0.5,
-                                    minWidth: 20,
-                                    textAlign: 'center',
-                                  }}
-                                >
-                                  {capBadge(child.badge)}
-                                </Box>
-                              ) : null}
-                            </ListItemButton>
-                          </ListItem>
-                        );
-                      })}
-                    </List>
-                  </Collapse>
-                ) : null}
-              </Box>
-            );
-          })}
+                                {capBadge(child.badge)}
+                              </Box>
+                            ) : null}
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                </Collapse>
+              ) : null}
+            </Box>
+          );
+        })}
       </List>
 
-      {/* Footer */}
+      {/* Footer — collapse toggle */}
       <Box
+        onClick={handleCollapseToggle}
         sx={{
-          height: 56,
+          height: 52,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: isExpanded ? 'space-between' : 'center',
-          px: isExpanded ? 2 : 1,
+          justifyContent: 'center',
           borderTop: '1px solid',
-          borderColor: 'divider',
+          borderColor: 'rgba(255,255,255,0.1)',
           flexShrink: 0,
+          cursor: 'pointer',
+          color: 'rgba(255,255,255,0.5)',
+          '&:hover': { bgcolor: 'rgba(255,255,255,0.07)' },
         }}
       >
-        {isExpanded && user && (
-          <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
-            {user.firstName} {user.lastName}
-          </Typography>
-        )}
-        <IconButton size="small" onClick={handleCollapseToggle} sx={{ color: 'text.secondary' }}>
-          {isExpanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-        </IconButton>
+        {isExpanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
       </Box>
     </Box>
   );

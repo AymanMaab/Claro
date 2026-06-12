@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Box, AppBar, Toolbar, IconButton, Typography } from '@mui/material';
-import { Menu } from 'lucide-react';
+import { Box, AppBar, Toolbar, IconButton, Avatar } from '@mui/material';
+import { Menu, Bell } from 'lucide-react';
+import { useAppSelector } from '../store/hooks';
 import Sidebar from './Sidebar';
 
-const MOBILE_BREAKPOINT = 768;
+const MOBILE_BREAKPOINT = 480;
 
 const MainLayout = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= MOBILE_BREAKPOINT);
@@ -21,6 +22,12 @@ const MainLayout = () => {
   }, []);
 
   const toggleMobile = () => setMobileOpen((o) => !o);
+
+  const user = useAppSelector((s) => s.auth.user);
+  const initials = user
+    ? `${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`.toUpperCase() || '?'
+    : '?';
+
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -59,21 +66,36 @@ const MainLayout = () => {
           position="static"
           elevation={0}
           sx={{
-            bgcolor: 'background.paper',
+            bgcolor: 'primary.dark',
             borderBottom: '1px solid',
-            borderColor: 'divider',
-            color: 'text.primary',
+            borderColor: 'rgba(255,255,255,0.1)',
+            color: '#fff',
           }}
         >
           <Toolbar sx={{ minHeight: '64px !important', gap: 1 }}>
             {isMobile && (
-              <IconButton edge="start" onClick={toggleMobile} size="small">
+              <IconButton edge="start" onClick={toggleMobile} size="small" sx={{ color: '#fff' }}>
                 <Menu size={20} />
               </IconButton>
             )}
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
-              {/* Page title will go here */}
-            </Typography>
+            <Box sx={{ flex: 1 }} />
+            <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#fff' } }}>
+              <Bell size={20} />
+            </IconButton>
+            <Avatar
+              sx={{
+                width: 34,
+                height: 34,
+                ml: 1,
+                fontSize: 13,
+                fontWeight: 600,
+                background: (t) => `linear-gradient(135deg, ${t.palette.primary.dark} 0%, ${t.palette.primary.light} 100%)`,
+                color: '#fff',
+                cursor: 'pointer',
+              }}
+            >
+              {initials}
+            </Avatar>
           </Toolbar>
         </AppBar>
 
