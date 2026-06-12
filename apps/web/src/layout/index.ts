@@ -1,1 +1,2 @@
-// Layout components: MainLayout, Sidebar, TopBar
+export { default as MainLayout } from './MainLayout';
+export { default as Sidebar } from './Sidebar';
