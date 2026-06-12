@@ -11,8 +11,8 @@ export class SeedAdminUser1780773777020 implements MigrationInterface {
     const hash = await bcrypt.hash('!Claro123', 12);
 
     await queryRunner.query(
-      `INSERT INTO "users" ("email", "password") VALUES ($1, $2)`,
-      ['superuser@claro.com', hash],
+      `INSERT INTO "users" ("first_name", "last_name", "email", "password") VALUES ($1, $2, $3, $4)`,
+      ['Super', 'User', 'superuser@claro.com', hash],
     );
   }
 

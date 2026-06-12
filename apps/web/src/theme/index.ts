@@ -19,10 +19,18 @@ const CLARO = {
 
 const shared = {
   typography: {
-    fontFamily: '"Inter", "Roboto", sans-serif',
-    h4: { fontWeight: 700 },
-    h5: { fontWeight: 600 },
-    h6: { fontWeight: 600 },
+    fontFamily: '"Inter", sans-serif',
+    fontWeightRegular: 400,
+    fontWeightMedium: 500,
+    fontWeightBold: 700,
+    h4: { fontWeight: 700, letterSpacing: -0.75 },
+    h5: { fontWeight: 700, letterSpacing: -0.5 },
+    h6: { fontWeight: 600, letterSpacing: -0.25 },
+    subtitle1: { fontWeight: 500, letterSpacing: -0.1 },
+    subtitle2: { fontWeight: 500 },
+    body1: { fontWeight: 400, letterSpacing: -0.1 },
+    body2: { fontWeight: 400 },
+    caption: { fontWeight: 400, letterSpacing: 0 },
   },
   shape: { borderRadius: 12 },
   components: {
