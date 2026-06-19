@@ -20,8 +20,10 @@ export class UsersService {
 
     async update(id: string, dto: UpdateUserDto): Promise<User> {
         const user = await this.findById(id);
-        if (dto.email) user.email = dto.email;
-        if (dto.password) user.password = await bcrypt.hash(dto.password, 12);
+        if (dto.firstName) user.firstName = dto.firstName;
+        if (dto.lastName)  user.lastName  = dto.lastName;
+        if (dto.email)     user.email     = dto.email;
+        if (dto.password)  user.password  = await bcrypt.hash(dto.password, 12);
         return this.userRepo.save(user);
     }
 

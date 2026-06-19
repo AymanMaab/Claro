@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { RoleGroup } from '../enums/role-group.enum';
 import { RolePermission } from './role-permission.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('roles')
 export class Role {
@@ -35,6 +36,11 @@ export class Role {
 
   @OneToMany(() => RolePermission, (rp) => rp.role)
   rolePermissions: RolePermission[];
+
+  @OneToMany(() => User, (user) => user.role)
+  users: User[];
+
+  memberCount?: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
