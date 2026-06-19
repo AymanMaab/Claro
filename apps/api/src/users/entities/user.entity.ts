@@ -3,9 +3,12 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Role } from '../../rbac/entities/role.entity';
 
 @Entity('users')
 export class User {
@@ -26,6 +29,13 @@ export class User {
 
   @Column({ name: 'is_active', default: false })
   isActive: boolean;
+
+  @Column({ name: 'role_id', nullable: true })
+  roleId: string | null;
+
+  @ManyToOne(() => Role, { nullable: true, eager: false })
+  @JoinColumn({ name: 'role_id' })
+  role: Role | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

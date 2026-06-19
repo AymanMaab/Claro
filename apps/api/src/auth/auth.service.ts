@@ -55,7 +55,8 @@ export class AuthService {
   async login(dto: LoginDto, meta: { userAgent?: string; ip?: string } = {}) {
     const user = await this.userRepo.findOne({
       where: { email: dto.email },
-      select: ['id', 'email', 'firstName', 'lastName', 'password', 'isActive'],
+      select: ['id', 'email', 'firstName', 'lastName', 'password', 'isActive', 'roleId'],
+      relations: ['role'],
     });
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -69,7 +70,7 @@ export class AuthService {
   }
 
   async refresh(rawToken: string, meta: { userAgent?: string; ip?: string } = {}) {
-    const records = await this.refreshTokenRepo.find({ relations: ['user'] });
+    const records = await this.refreshTokenRepo.find({ relations: ['user', 'user.role'] });
 
     let matched: RefreshToken | null = null;
     for (const record of records) {
@@ -112,6 +113,9 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      roleId: user.role?.id ?? null,
+      roleName: user.role?.name ?? null,
+      roleGroup: user.role?.group ?? null,
     };
 
     const accessToken = this.jwtService.sign(payload, {
