@@ -15,7 +15,7 @@ interface RegisterRequest {
   password: string;
 }
 
-interface AuthResponse {
+export interface AuthResponse {
   accessToken: string;
   user: AuthUser;
 }
