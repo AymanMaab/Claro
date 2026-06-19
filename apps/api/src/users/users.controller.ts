@@ -1,6 +1,9 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { RequiresPermission } from '../rbac/decorators/requires-permission.decorator';
+import { Resource } from '../rbac/enums/resource.enum';
+import { Action } from '../rbac/enums/action.enum';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -11,12 +14,14 @@ export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @Get('me')
+  @RequiresPermission([Resource.USERS, Action.READ])
   @ApiOperation({ summary: 'Get current user profile' })
   getMe(@CurrentUser() user: { id: string }) {
     return this.usersService.findById(user.id);
   }
 
   @Patch('me')
+  @RequiresPermission([Resource.USERS, Action.UPDATE])
   @ApiOperation({ summary: 'Update email or password' })
   updateMe(@CurrentUser() user: { id: string }, @Body() dto: UpdateUserDto) {
     return this.usersService.update(user.id, dto);
@@ -24,6 +29,7 @@ export class UsersController {
 
   @Delete('me')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RequiresPermission([Resource.USERS, Action.DELETE])
   @ApiOperation({ summary: 'Delete account' })
   deleteMe(@CurrentUser() user: { id: string }) {
     return this.usersService.remove(user.id);

@@ -23,6 +23,7 @@ import {
   ChevronUp,
   type LucideIcon,
 } from 'lucide-react';
+import { usePermissions } from '../hooks/usePermissions';
 
 const EXPANDED = 212;
 const COLLAPSED = 64;
@@ -51,25 +52,25 @@ interface SidebarProps {
   isMobile?: boolean;
 }
 
-const MENU_ITEMS: MenuItem[] = [
+const buildMenuItems = (hasPermission: (resource: string, action: string) => boolean): MenuItem[] => [
   { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard, path: '/dashboard',    isAccessible: true },
-  { id: 'accounts',     label: 'Accounts',     icon: CreditCard,      path: '/accounts',     isAccessible: true,
+  { id: 'accounts',     label: 'Accounts',     icon: CreditCard,      path: '/accounts',     isAccessible: hasPermission('accounts', 'read'),
     children: [
       { id: 'accounts-overview', label: 'Overview', tabId: 'dashboard', icon: LayoutDashboard },
       { id: 'accounts-cards',    label: 'Cards',    tabId: 'cards',     icon: CreditCard },
     ],
   },
-  { id: 'transactions', label: 'Transactions', icon: ArrowLeftRight,  path: '/transactions', isAccessible: true },
-  { id: 'budgets',      label: 'Budgets',      icon: Wallet,          path: '/budgets',      isAccessible: true },
-  { id: 'analytics',    label: 'Analytics',    icon: BarChart2,       path: '/analytics',    isAccessible: true },
+  { id: 'transactions', label: 'Transactions', icon: ArrowLeftRight,  path: '/transactions', isAccessible: hasPermission('transactions', 'read') },
+  { id: 'budgets',      label: 'Budgets',      icon: Wallet,          path: '/budgets',      isAccessible: hasPermission('budgets', 'read') },
+  { id: 'analytics',    label: 'Analytics',    icon: BarChart2,       path: '/analytics',    isAccessible: hasPermission('analytics', 'read') },
   { id: 'settings',     label: 'Settings',     icon: Settings,        path: '/settings',     isAccessible: true },
 ];
 
 const pathMatches = (path: string, pathname: string) =>
   pathname === path || pathname.startsWith(`${path}/`);
 
-const getActiveId = (pathname: string) =>
-  MENU_ITEMS
+const getActiveId = (items: MenuItem[], pathname: string) =>
+  items
     .filter((item) => pathMatches(item.path, pathname))
     .sort((a, b) => b.path.length - a.path.length)[0]?.id ?? null;
 
@@ -84,16 +85,18 @@ const capBadge = (n: number) => (n > 99 ? '99+' : String(n));
 const Sidebar = ({ isOpen, onToggle, isMobile = false }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
 
   const [collapsed, setCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
 
-  const activeId = getActiveId(location.pathname);
+  const menuItems = buildMenuItems(hasPermission);
+  const activeId = getActiveId(menuItems, location.pathname);
   const isExpanded = isMobile ? (isOpen ?? false) : !collapsed;
   const width = isExpanded ? EXPANDED : COLLAPSED;
 
   useEffect(() => {
-    const active = MENU_ITEMS.find((m) => m.id === activeId);
+    const active = menuItems.find((m) => m.id === activeId);
     if (active?.children) {
       setExpandedMenus((prev) => new Set([...prev, activeId!]));
     }
@@ -191,7 +194,7 @@ const Sidebar = ({ isOpen, onToggle, isMobile = false }: SidebarProps) => {
 
       {/* Nav items */}
       <List sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', py: 1 }} disablePadding>
-        {MENU_ITEMS.filter((item) => item.isAccessible).map((item) => {
+        {menuItems.filter((item) => item.isAccessible).map((item) => {
           const Icon = item.icon;
           const isActive = activeId === item.id;
           const isMenuExpanded = expandedMenus.has(item.id);

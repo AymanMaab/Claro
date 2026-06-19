@@ -1,1 +1,1 @@
-// Custom React hooks
+export { usePermissions } from './usePermissions';

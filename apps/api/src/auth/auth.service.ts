@@ -55,7 +55,8 @@ export class AuthService {
   async login(dto: LoginDto, meta: { userAgent?: string; ip?: string } = {}) {
     const user = await this.userRepo.findOne({
       where: { email: dto.email },
-      select: ['id', 'email', 'firstName', 'lastName', 'password', 'isActive'],
+      select: ['id', 'email', 'firstName', 'lastName', 'password', 'isActive', 'roleId'],
+      relations: ['role', 'role.rolePermissions', 'role.rolePermissions.permission'],
     });
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -69,7 +70,9 @@ export class AuthService {
   }
 
   async refresh(rawToken: string, meta: { userAgent?: string; ip?: string } = {}) {
-    const records = await this.refreshTokenRepo.find({ relations: ['user'] });
+    const records = await this.refreshTokenRepo.find({
+      relations: ['user', 'user.role', 'user.role.rolePermissions', 'user.role.rolePermissions.permission'],
+    });
 
     let matched: RefreshToken | null = null;
     for (const record of records) {
@@ -112,6 +115,9 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      roleId: user.role?.id ?? null,
+      roleName: user.role?.name ?? null,
+      roleGroup: user.role?.group ?? null,
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -136,10 +142,24 @@ export class AuthService {
       }),
     );
 
+    const permissions = (user.role?.rolePermissions ?? []).map((rp) => ({
+      resource: rp.permission.resource,
+      action: rp.permission.action,
+    }));
+
     return {
       accessToken,
       refreshToken: rawRefreshToken,
-      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+          ? { id: user.role.id, name: user.role.name, group: user.role.group }
+          : null,
+        permissions,
+      },
     };
   }
 }

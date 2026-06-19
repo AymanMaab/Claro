@@ -1,10 +1,19 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
+export type RoleGroup = 'SUPER_USER' | 'ADMIN' | 'MEMBER';
+
+export interface Permission {
+  resource: string;
+  action: string;
+}
+
 export interface AuthUser {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
+  role: { id: string; name: string; group: RoleGroup } | null;
+  permissions: Permission[];
 }
 
 interface AuthState {
