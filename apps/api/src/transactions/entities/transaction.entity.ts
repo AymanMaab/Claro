@@ -18,11 +18,17 @@ export class Transaction {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
-  @ManyToOne(() => Account, { onDelete: 'CASCADE', eager: false })
+  @ManyToOne(() => Account, {
+    onDelete: 'CASCADE',
+    eager: false,
+  })
   account: Account;
 
-  @ManyToOne(() => CsvImport, { onDelete: 'CASCADE' })
-  import: CsvImport;
+  @ManyToOne(() => CsvImport, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
+  import: CsvImport | null;
 
   @Column({ unique: true })
   hashKey: string;
@@ -30,7 +36,11 @@ export class Transaction {
   @Column()
   description: string;
 
-  @Column({ type: 'numeric', precision: 12, scale: 2 })
+  @Column({
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+  })
   amount: number;
 
   @Column()
