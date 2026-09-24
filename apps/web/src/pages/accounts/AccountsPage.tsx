@@ -32,14 +32,22 @@ interface Account {
 const AccountsPage = () => {
   const [open, setOpen] = useState(false);
 
-  const [accounts] = useState<Account[]>([]);
+  const [bankName, setBankName] = useState('');
 
-  const formatBalance = (balance: number) =>
-    new Intl.NumberFormat('en-PK', {
-      style: 'currency',
-      currency: 'PKR',
-      maximumFractionDigits: 2,
-    }).format(balance);
+  const [bankNameError, setBankNameError] = useState('');
+
+ const [accounts] = useState<Account[]>([]);
+
+const validateBankName = () => {
+  const isValid = /^[A-Za-z ]+$/.test(bankName);
+};
+
+const formatBalance = (balance: number) =>
+  new Intl.NumberFormat('en-PK', {
+    style: 'currency',
+    currency: 'PKR',
+    maximumFractionDigits: 2,
+  }).format(balance);
 
   const getIcon = (type: Account['type']) => {
     if (type === 'Credit') {
@@ -309,6 +317,8 @@ const AccountsPage = () => {
             <TextField
               label="Bank Name"
               placeholder="e.g. HBL"
+              value={bankName}
+              onChange={(e) => setBankName(e.target.value)}
               fullWidth
             />
 
