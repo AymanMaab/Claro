@@ -36,10 +36,16 @@ const AccountsPage = () => {
 
   const [bankNameError, setBankNameError] = useState('');
 
+  const [accountType, setAccountType] = useState('');
+
  const [accounts] = useState<Account[]>([]);
 
 const validateBankName = () => {
   const isValid = /^[A-Za-z ]+$/.test(bankName);
+
+  if (!isValid) {
+    setBankNameError('Bank name is required');
+  }
 };
 
 const formatBalance = (balance: number) =>
@@ -319,24 +325,58 @@ const formatBalance = (balance: number) =>
               placeholder="e.g. HBL"
               value={bankName}
               onChange={(e) => setBankName(e.target.value)}
+              error={!!bankNameError}
+              helperText={bankNameError}
               fullWidth
             />
 
             <TextField
-              label="Account Name"
-              placeholder="e.g. Main Account"
-              fullWidth
-            />
+             label="Account Name"
+             select 
+             fullWidth
+             >
+             <MenuItem value="Personal Account">
+             Personal Account
+             </MenuItem>
 
-            <TextField
-              select
-              label="Account Type"
-              defaultValue="Current"
-              fullWidth
-            >
-              <MenuItem value="Current">Current</MenuItem>
-              <MenuItem value="Savings">Savings</MenuItem>
-              <MenuItem value="Credit">Credit</MenuItem>
+             <MenuItem value="Savings">
+             Savings
+             </MenuItem>
+             <MenuItem value="Salary Account">
+             Salary Account
+             </MenuItem>
+             
+             <MenuItem value="Emergency Fund">
+             Emergency Fund
+             </MenuItem>
+             
+             <MenuItem value="Daily Expenses">
+             Daily Expenses
+             </MenuItem>
+            
+             <MenuItem value="Business Account">
+             Business Account
+             </MenuItem>
+            
+             <MenuItem value="Other">
+             Other
+             </MenuItem>
+             </TextField>
+
+           <TextField 
+           select 
+           label="Account Type" 
+           value={accountType}
+           onChange={(e) => setAccountType(e.target.value)}
+           fullWidth 
+           >
+            <MenuItem value="" disabled>
+            Select Account Type
+            </MenuItem>
+
+            <MenuItem value="Current">Current</MenuItem>
+            <MenuItem value="Savings">Savings</MenuItem>
+            <MenuItem value="Credit">Credit</MenuItem>
             </TextField>
 
             <TextField
@@ -358,7 +398,7 @@ const formatBalance = (balance: number) =>
 
           <Button
             variant="contained"
-            onClick={() => setOpen(false)}
+            onClick={validateBankName}
             sx={{
               textTransform: 'none',
               fontWeight: 600,
